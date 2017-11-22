@@ -11,19 +11,30 @@ import Speech
 
 class ViewController: UIViewController, AVAudioRecorderDelegate {
 
+
+    @IBOutlet var txtTime: UILabel!
     @IBOutlet var textView: UITextView!
+    @IBOutlet var timeSlider: UISlider!
+    @IBOutlet var txtTimeLeft: UILabel!
     var audioRecordingSession : AVAudioSession!
     var audioRecorder : AVAudioRecorder!
-    let audioFileName : String = "audio-recordered.m4a"
+    let audioFileName: String = "audio-recordered.m4a"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-
+        timeSlider.addTarget(self, action:  #selector(onTimeChanged), for: .valueChanged)
         //recognizeSpeech()
-        recordingAudioSetup()
-    
+        txtTime.text = String(timeSlider.value)
+        txtTimeLeft.text = String(timeSlider.value)		
     }
+    @IBAction func onTimeChanged(_ sender: Any) {
+        txtTime.text = String(timeSlider.value)
+        txtTimeLeft.text = String(timeSlider.value)
+    }
+    @IBAction func startRecording(_ sender: Any) {
+        recordingAudioSetup()
 
+    }
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -42,8 +53,6 @@ class ViewController: UIViewController, AVAudioRecorderDelegate {
                         self.textView.text = recognitionResult?.bestTranscription.formattedString
                     }
                 })
-                
-                
             }else{
                 
             }
@@ -86,6 +95,8 @@ class ViewController: UIViewController, AVAudioRecorderDelegate {
 
     }
     func startRecording(){
+        
+        Timer.scheduledTimer(timeInterval: 1, target: self, selector:#selector(self.timeRemaining), userInfo: nil, repeats: true)
         let settings = [AVFormatIDKey :Int(kAudioFormatMPEG4AAC),
                         AVSampleRateKey:12000.0,
                         AVNumberOfChannelsKey:1 as NSNumber,
@@ -95,11 +106,14 @@ class ViewController: UIViewController, AVAudioRecorderDelegate {
             audioRecorder = try AVAudioRecorder(url: directoryURL()!, settings: settings)
             audioRecorder.delegate = self
             audioRecorder.record()
-            
-            Timer.scheduledTimer(timeInterval: 10.0, target: self, selector:#selector(self.stopRecording), userInfo: nil, repeats: false)
+            let interval = Double(txtTime.text!)
+            Timer.scheduledTimer(timeInterval: interval!, target: self, selector:#selector(self.stopRecording), userInfo: nil, repeats: false)
         }catch{
             print("No se pudo grabar el audio correctamente")
         }
+    }
+    @objc func timeRemaining(){
+        txtTimeLeft.text = String(Int(txtTimeLeft.text!)! - 1)
     }
     @objc func stopRecording(){
         audioRecorder.stop()
